@@ -2,21 +2,21 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
       .then((reg) => {
-        console.log('Service worker registered.', reg);
+        console.log('Service worker is working.', reg);
       });
   });
 }
 
-let transactions = [];
-let myChart;
+let purchases = [];
+let myTable;
 
 fetch("/api/transaction")
   .then(response => {
     return response.json();
   })
   .then(data => {
-    // save db data on global variable
-    transactions = data;
+  
+    purchases = data;
 
     populateTotal();
     populateTable();
@@ -24,8 +24,8 @@ fetch("/api/transaction")
   });
 
 function populateTotal() {
-  // reduce transaction amounts to a single total value
-  let total = transactions.reduce((total, t) => {
+
+  let total = purchases.reduce((total, t) => {
     return total + parseInt(t.value);
   }, 0);
 
@@ -37,7 +37,7 @@ function populateTable() {
   let tbody = document.querySelector("#tbody");
   tbody.innerHTML = "";
 
-  transactions.forEach(transaction => {
+  purchases.forEach(transaction => {
     // create and populate a table row
     let tr = document.createElement("tr");
     tr.innerHTML = `
@@ -50,30 +50,29 @@ function populateTable() {
 }
 
 function populateChart() {
-  // copy array and reverse it
-  let reversed = transactions.slice().reverse();
+
+  let reversed = purchases.slice().reverse();
   let sum = 0;
 
-  // create date labels for chart
+  
   let labels = reversed.map(t => {
     let date = new Date(t.date);
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   });
 
-  // create incremental values for chart
   let data = reversed.map(t => {
     sum += parseInt(t.value);
     return sum;
   });
 
-  // remove old chart if it exists
-  if (myChart) {
-    myChart.destroy();
+
+  if (myTable) {
+    myTable.destroy();
   }
 
-  let ctx = document.getElementById("myChart").getContext("2d");
+  let ctx = document.getElementById("myTable").getContext("2d");
 
-  myChart = new Chart(ctx, {
+  myTable = new Chart(ctx, {
     type: 'line',
       data: {
         labels,
@@ -92,7 +91,7 @@ function sendTransaction(isAdding) {
   let amountEl = document.querySelector("#t-amount");
   let errorEl = document.querySelector(".form .error");
 
-  // validate form
+
   if (nameEl.value === "" || amountEl.value === "") {
     errorEl.textContent = "Missing Information";
     return;
@@ -101,27 +100,26 @@ function sendTransaction(isAdding) {
     errorEl.textContent = "";
   }
 
-  // create record
+
   let transaction = {
     name: nameEl.value,
     value: amountEl.value,
     date: new Date().toISOString()
   };
 
-  // if subtracting funds, convert amount to negative number
+ 
   if (!isAdding) {
     transaction.value *= -1;
   }
 
-  // add to beginning of current array of data
-  transactions.unshift(transaction);
+  purchases.unshift(transaction);
 
-  // re-run logic to populate ui with new record
+ 
   populateChart();
   populateTable();
   populateTotal();
   
-  // also send to server
+
   fetch("/api/transaction", {
     method: "POST",
     body: JSON.stringify(transaction),
@@ -138,16 +136,16 @@ function sendTransaction(isAdding) {
       errorEl.textContent = "Missing Information";
     }
     else {
-      // clear form
+     
       nameEl.value = "";
       amountEl.value = "";
     }
   })
   .catch(err => {
-    // fetch failed, so save in indexed db
+   
     saveRecord(transaction);
 
-    // clear form
+  
     nameEl.value = "";
     amountEl.value = "";
   });
