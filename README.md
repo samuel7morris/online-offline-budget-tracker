@@ -1,1 +1,2 @@
 # online-offline-budget-tracker
+This program is a simple budget tracker that offers both on and offline functionality. This can be useful when you do not have access to the internet and you still need to access some of your information. 
